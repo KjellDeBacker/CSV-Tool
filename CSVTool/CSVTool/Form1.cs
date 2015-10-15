@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Windows.Forms;
 
@@ -11,26 +12,80 @@ namespace CSVTool
             InitializeComponent();
         }
 
-        private void MenuBar_File_Open_Click(object sender, EventArgs e)
+        public void LoadCSVFile(String path)
+        {
+            Table.Rows.Clear();
+            Table.Columns.Clear();
+            
+            StreamReader file = File.OpenText(path);
+
+            String[] header = file.ReadLine().Split(',');
+            Table.ColumnCount = header.Length;
+
+            for (int i = 0; i < Table.ColumnCount; i++)
+            {
+                Table.Columns[i].Name = header[i];
+            }
+
+            String row = "";
+            while ((row = file.ReadLine()) != null)
+            {
+                Table.Rows.Add(row.Split(','));
+            }
+
+            file.Close();
+        }
+
+        public void SaveCSVFile(String path)
+        {
+            Boolean temp = Table.AllowUserToAddRows;
+            Table.AllowUserToAddRows = false;
+
+            StreamWriter file = new StreamWriter(path);
+
+            List<String> header = new List<String>();
+
+            for (int i = 0; i < Table.ColumnCount; i++)
+            {
+                header.Add(Table.Columns[i].Name);
+            }
+
+            file.WriteLine(String.Join(",", header));
+
+            foreach (DataGridViewRow row in Table.Rows)
+            {
+                List<String> rowArray = new List<String>();
+                foreach (DataGridViewCell cell in row.Cells)
+                {
+                    rowArray.Add((String)cell.Value);
+                }
+                file.WriteLine(String.Join(",", rowArray));
+            }
+
+            file.Close();
+
+            Table.AllowUserToAddRows = temp;
+        }
+
+        private void MenuBarFileOpen_Click(object sender, EventArgs e)
         {
             if (OpenFileDialog.ShowDialog() == DialogResult.OK)
             {
-                StreamReader sr = File.OpenText(OpenFileDialog.FileName);
-
-                String[] Headers = sr.ReadLine().Split(',');
-                DataGridView.ColumnCount = Headers.Length;
-
-                for (int i = 0; i < Headers.Length; i++)
-                {
-                    DataGridView.Columns[i].Name = Headers[i];
-                }
-
-                String s = "";
-                while ((s = sr.ReadLine()) != null)
-                {
-                    DataGridView.Rows.Add(s.Split(','));
-                }
+                LoadCSVFile(OpenFileDialog.FileName);
             }
+        }
+
+        private void MenuBarFileSave_Click(object sender, EventArgs e)
+        {
+            if (SaveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                SaveCSVFile(SaveFileDialog.FileName);
+            }
+        }
+
+        private void MenuBarFileExit_Click(object sender, EventArgs e)
+        {
+            this.Dispose();
         }
     }
 }
